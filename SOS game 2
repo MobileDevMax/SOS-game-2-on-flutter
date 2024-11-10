@@ -1,0 +1,216 @@
+import 'package:flutter/material.dart';
+
+void main() => runApp(SOSGame());
+
+class SOSGame extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'SOS Game',
+      home: PlayerSelectionScreen(),
+    );
+  }
+}
+
+class PlayerSelectionScreen extends StatefulWidget {
+  @override
+  _PlayerSelectionScreenState createState() => _PlayerSelectionScreenState();
+}
+
+class _PlayerSelectionScreenState extends State<PlayerSelectionScreen> {
+  String player1 = 'Player 1';
+  String player2 = 'Player 2';
+
+  void startGame() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => GameScreen(
+          player1: player1,
+          player2: player2,
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text("Players choice")),
+      body: Center(
+        child: ElevatedButton(
+          onPressed: startGame,
+          child: Text("Start the game"),
+        ),
+      ),
+    );
+  }
+}
+
+class GameScreen extends StatefulWidget {
+  final String player1;
+  final String player2;
+
+  GameScreen({required this.player1, required this.player2});
+
+  @override
+  _GameScreenState createState() => _GameScreenState();
+}
+
+class _GameScreenState extends State<GameScreen> {
+  late List<List<String>> grid;
+  String? player1Letter;
+  String? player2Letter;
+  String currentPlayer;
+  String winner = '';
+
+  _GameScreenState() : currentPlayer = 'Player 1';
+
+  @override
+  void initState() {
+    super.initState();
+    grid = List.generate(5, (_) => List.generate(5, (_) => ''));
+  }
+
+  void _chooseLetter(String letter) {
+    if (currentPlayer == widget.player1) {
+      setState(() {
+        player1Letter = letter;
+      });
+    } else {
+      setState(() {
+        player2Letter = letter;
+      });
+    }
+  }
+
+  void _handleTap(int x, int y) {
+    if (grid[x][y] == '' && winner == '') {
+      setState(() {
+        grid[x][y] =
+            currentPlayer == widget.player1 ? player1Letter! : player2Letter!;
+        _checkWinner();
+
+        currentPlayer =
+            currentPlayer == widget.player1 ? widget.player2 : widget.player1;
+      });
+    }
+  }
+
+  void _checkWinner() {
+    for (int i = 0; i < 5; i++) {
+      for (int j = 0; j <= 2; j++) {
+        if ((grid[i][j] == 'S' &&
+                grid[i][j + 1] == 'O' &&
+                grid[i][j + 2] == 'S') ||
+            (grid[j][i] == 'S' &&
+                grid[j + 1][i] == 'O' &&
+                grid[j + 2][i] == 'S')) {
+          setState(() {
+            winner = currentPlayer;
+          });
+          return;
+        }
+      }
+    }
+
+    for (int i = 0; i <= 2; i++) {
+      if ((grid[i][i] == 'S' &&
+              grid[i + 1][i + 1] == 'O' &&
+              grid[i + 2][i + 2] == 'S') ||
+          (grid[i][4 - i] == 'S' &&
+              grid[i + 1][3 - i] == 'O' &&
+              grid[i + 2][2 - i] == 'S')) {
+        setState(() {
+          winner = currentPlayer;
+        });
+        return;
+      }
+    }
+
+    for (int j = 0; j < 3; j++) {
+      if ((grid[j][4 - j] == 'S' &&
+              grid[j + 1][3 - j] == 'O' &&
+              grid[j + 2][2 - j] == 'S') ||
+          (grid[4 - j][j] == 'S' &&
+              grid[3 - j][j + 1] == 'O' &&
+              grid[2 - j][j + 2] == 'S')) {
+        setState(() {
+          winner = currentPlayer;
+        });
+        return;
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text("SOS Game")),
+      body: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            winner.isEmpty ? "Current: $currentPlayer" : "Winner: $winner",
+            style: TextStyle(fontSize: 24),
+          ),
+          if (winner.isEmpty)
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ElevatedButton(
+                  onPressed: () => _chooseLetter('S'),
+                  child: Text('Choose S'),
+                ),
+                SizedBox(width: 20),
+                ElevatedButton(
+                  onPressed: () => _chooseLetter('O'),
+                  child: Text('Choose O'),
+                ),
+              ],
+            ),
+          SizedBox(height: 20),
+          Expanded(
+            child: GridView.builder(
+              gridDelegate:
+                  SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 5),
+              itemCount: 25,
+              itemBuilder: (context, index) {
+                int x = index ~/ 5;
+                int y = index % 5;
+                return GestureDetector(
+                  onTap: () => _handleTap(x, y),
+                  child: Container(
+                    margin: EdgeInsets.all(2),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.black),
+                      color: Colors.white,
+                    ),
+                    child: Center(
+                      child: Text(
+                        grid[x][y],
+                        style: TextStyle(fontSize: 96),
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              setState(() {
+                grid = List.generate(5, (_) => List.generate(5, (_) => ''));
+                winner = '';
+                currentPlayer = widget.player1;
+                player1Letter = null;
+                player2Letter = null;
+              });
+            },
+            child: Text('Start over'),
+          ),
+        ],
+      ),
+    );
+  }
+}
